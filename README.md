@@ -20,4 +20,3 @@ A modern, full-stack URL shortening service built with **FastAPI** (Python) back
 - 🎉 **Toast Notifications** - User-friendly success/error messages
 - 🌈 **Gradient Backgrounds** - Eye-catching visual design
 
-## ��️ Project Structure
