@@ -1,13 +1,27 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 from typing import Dict
 import random, string
+import os
 
 app = FastAPI()
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins (development only)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 url_store = {}  # short_code -> long_url
+
+# For local development, use localhost with a custom path
+BASE_URL = "http://localhost:8000"
 
 # Indian timezone (UTC+5:30)
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -25,7 +39,8 @@ def shorten_url(request: ShortenRequest):
             raise HTTPException(status_code=400, detail="Custom code already in use")
         short_code = request.custom_code
     else:
-        short_code = ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+        # Generate a more readable short code
+        short_code = generate_readable_code()
 
     expiry_time = None    
     if request.expire_minutes:
@@ -35,9 +50,21 @@ def shorten_url(request: ShortenRequest):
 
     url_store[short_code] = {
         "long_url": request.long_url,
-        "expiry_time": expiry_time
+        "expiry_time": expiry_time,
+        "created_at": datetime.now(IST)
     }
-    return {"short_url": f"http://localhost:8000/{short_code}"}
+    return {"short_url": f"{BASE_URL}/{short_code}"}
+
+def generate_readable_code():
+    """Generate a more readable short code like Bitly"""
+    # Use a mix of letters and numbers, avoiding confusing characters
+    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    # Remove confusing characters
+    chars = chars.replace("0", "").replace("O", "").replace("I", "").replace("l", "")
+    
+    # Generate 6-8 character code
+    length = random.randint(6, 8)
+    return ''.join(random.choices(chars, k=length))
 
 @app.get("/list")
 def list_urls() -> Dict[str, dict]:
@@ -53,7 +80,10 @@ def url_stats(short_code: str):
     return {
         "long_url": record["long_url"],
         "expiry_time": str(record["expiry_time"]) if record["expiry_time"] else "Never",
+        "created_at": str(record["created_at"]),
+        "short_url": f"{BASE_URL}/{short_code}"
     }            
+
 @app.get("/{short_code}")
 def redirect_to_url(short_code: str):
     if short_code not in url_store:
@@ -68,4 +98,17 @@ def redirect_to_url(short_code: str):
         raise HTTPException(status_code=410, detail="Short URL expired")
 
     return RedirectResponse(record["long_url"])
+
+@app.get("/")
+def root():
+    return {
+        "message": "Welcome to URL Shortener API",
+        "base_url": BASE_URL,
+        "endpoints": {
+            "shorten": "POST /shorten",
+            "redirect": "GET /{short_code}",
+            "stats": "GET /stats/{short_code}",
+            "list": "GET /list"
+        }
+    }
 

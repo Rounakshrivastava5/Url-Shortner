@@ -1,0 +1,146 @@
+<div class="url-shortener-container">
+  <!-- Header Bar -->
+  <div class="header-bar">
+    <div class="header-content">
+      <div class="header-left">
+        <span class="logo">🔗</span>
+        <span class="brand-name">URL Shortener</span>
+      </div>
+      <div class="header-right">
+        <button class="theme-toggle-btn" (click)="toggleTheme()" [title]="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <span *ngIf="isDarkMode">☀️</span>
+          <span *ngIf="!isDarkMode">🌙</span>
+        </button>
+        <span class="user-info">Welcome</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- URL Shortener Form Card -->
+    <div class="glass-card form-card">
+      <div class="header">
+        <h2>Create Short URL</h2>
+        <p>Enter your long URL below to get started</p>
+      </div>
+
+      <form [formGroup]="urlForm" (ngSubmit)="onSubmit()" class="url-form">
+        <div class="form-group">
+          <label for="longUrl">Enter your URL</label>
+          <input 
+            type="url" 
+            id="longUrl" 
+            formControlName="longUrl" 
+            placeholder="https://example.com/very-long-url"
+            class="url-input"
+            style="max-width: 93%;"
+          >
+          <div *ngIf="urlForm.get('longUrl')?.invalid && urlForm.get('longUrl')?.touched" class="error">
+            Please enter a valid URL starting with http:// or https://
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customCode">Custom Code (Optional)</label>
+            <input 
+              type="text" 
+              id="customCode" 
+              formControlName="customCode" 
+              placeholder="my-custom-link"
+              class="custom-input"
+              style="max-width: 150%;"
+            >
+          </div>
+
+          <div class="form-group">
+            <label style="margin-left: 10%;" for="expireMinutes">Expire in (minutes)</label>
+            <input 
+              type="number" 
+              id="expireMinutes" 
+              formControlName="expireMinutes" 
+              placeholder="60"
+              class="expire-input"
+              style="max-width: 30%; margin-left: 10%;"
+            >
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          [disabled]="urlForm.invalid || isLoading"
+          class="shorten-btn"
+        >
+          <span *ngIf="!isLoading">Shorten URL</span>
+          <span *ngIf="isLoading">Shortening...</span>
+        </button>
+      </form>
+
+      <div *ngIf="shortenedUrl" class="result-section">
+        <div class="result-card">
+          <h3>🎉 Your Short URL is Ready!</h3>
+          <div class="short-url-container">
+            <input 
+              type="text" 
+              [value]="shortenedUrl" 
+              readonly 
+              class="short-url-input"
+            >
+            <button (click)="copyToClipboard(shortenedUrl)" class="copy-btn">
+              📋 Copy
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- URL List Section -->
+    <div class="glass-card list-card">
+      <div class="list-header">
+        <h2>🔗 Your Short URLs</h2>
+        <button (click)="loadUrlList()" class="refresh-btn" [disabled]="isLoadingList">
+          <span *ngIf="!isLoadingList">🔄 Refresh</span>
+          <span *ngIf="isLoadingList">⏳ Loading...</span>
+        </button>
+      </div>
+
+      <div *ngIf="isLoadingList" class="loading-state">
+        <p>Loading URLs...</p>
+      </div>
+
+      <div *ngIf="!isLoadingList && Object.keys(urlList).length === 0" class="empty-state">
+        <p>No URLs created yet. Create your first short URL above! 🚀</p>
+      </div>
+
+      <div *ngIf="!isLoadingList && Object.keys(urlList).length > 0" class="url-list">
+        <div *ngFor="let urlEntry of urlList | keyvalue" class="url-item">
+          <div class="url-info">
+            <div class="short-code">
+              <strong>{{ urlEntry.key }}</strong>
+              <span class="status-badge" [class.expired]="isExpired(urlEntry.value.expiry_time)">
+                {{ isExpired(urlEntry.value.expiry_time) ? 'Expired' : 'Active' }}
+              </span>
+            </div>
+            <div class="long-url">{{ urlEntry.value.long_url }}</div>
+            <div class="expiry-info">
+              <span class="expiry-label">Expires:</span>
+              <span class="expiry-time">{{ formatExpiryTime(urlEntry.value.expiry_time) }}</span>
+            </div>
+          </div>
+          <div class="url-actions">
+            <input 
+              type="text" 
+              [value]="getShortUrl(urlEntry.key)" 
+              readonly 
+              class="short-url-display"
+            >
+            <button (click)="copyToClipboard(getShortUrl(urlEntry.key))" class="copy-btn-small">
+              📋
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
