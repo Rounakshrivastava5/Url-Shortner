@@ -1,7 +1,9 @@
 # 🔗 URL Shortener
 
 A modern, full-stack URL shortening service built with **FastAPI** (Python) backend and **Angular** frontend, featuring a beautiful glassmorphism UI design with dark/light mode support.
-![Uploading image.png…]()
+
+<img width="1919" height="927" alt="image" src="https://github.com/user-attachments/assets/c7dd736b-3ec5-493b-b1cc-ec9c3786b3e2" />
+
 
 
 ## ✨ Features
